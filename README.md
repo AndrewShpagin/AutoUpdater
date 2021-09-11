@@ -13,4 +13,4 @@ This app intended to solve the fast delivery of updates to the final customer.
 - You making the installer as you was doing it before, but bringing the AutoUpdater with the distributive. When user need an update or switch to the other build, he presses the button in your program and it closes and calls AutoUpdater. 
 - It opens in browser and offers the builds list to user. 
 - User selects the build, AutoUpdater downloads changes, replaces the required files, removes the unnecessary ones.
-- If user needs he may run the software right from the page in browser.
+- If user needs, he may run the software right from the page in browser.
