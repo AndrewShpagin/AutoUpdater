@@ -1,0 +1,396 @@
+﻿<!DOCTYPE html>
+<html>
+<style>
+    html, body {
+        margin: 0px;
+        font-family: "Roboto";
+        background-color: #f1f1f1;
+    }
+
+    .whole {
+        max-width: 1000pt;
+        display: grid;
+        grid-template-rows: 50pt auto;
+        height: 100%;
+        margin: auto;
+    }
+
+    html, body, .container {
+        height: 100%;
+        margin: 0;
+    }
+
+    .header {
+        background-color: #666;
+        text-align: center;
+        color: white;
+        padding: 0pt;
+        margin: 0pt;
+    }
+
+    .content {
+        display: grid;
+        grid-template-columns: 120pt auto;
+    }
+
+    #versions {
+        background: #ccc;
+        padding: 0pt;
+        text-align: center;
+    }
+
+    .vitem {
+        height: fit-content;
+        background-color: #ccc;
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        caret-color: transparent;
+        font-weight: 500;
+        padding: 8pt;
+        margin: 2pt;
+    }
+
+        .vitem:hover {
+            background-color: #666;
+            color: #222;
+            font-weight: 900;
+            cursor: default;
+            border-radius: 3px;
+            color: #ffffff;
+        }
+
+    .vitemCur {
+        height: fit-content;
+        background-color: #ccc;
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+        caret-color: transparent;
+        font-weight: 900;
+        padding: 8pt;
+        margin: 2pt;
+    }
+
+        .vitemCur:hover {
+            background-color: #666;
+            color: #222;
+            font-weight: 900;
+            cursor: default;
+            border-radius: 3px;
+            color: #ffffff;
+        }
+
+    .rightside {
+        display: grid;
+        grid-template-rows: auto 1fr;
+        padding: 0px;
+        background-color: white;
+    }
+
+    #setup {
+        padding: 10px;
+    }
+
+    .inner {
+        max-width: 1000pt;
+        background-color: white;
+        color: white;
+        border-left: 15pt solid white;
+        padding: 3pt;
+    }
+
+    #progress {
+        padding: 10px;
+        background-color: #fff;
+    }
+
+    #features {
+        display: grid;
+        grid-template-rows: 25pt 1fr;
+    }
+
+    #header2 {
+        background-color: #ccc;
+        text-align: left;
+        color: black;
+        padding-left: 10pt;
+        margin: 0pt;
+        display: flex;
+        justify-content: center;
+        flex-direction: column;
+    }
+
+    #fheader {
+        background-color: #666;
+        text-align: center;
+        color: white;
+    }
+
+    .progressLine {
+        display: grid;
+        grid-template-columns: 1fr auto;
+    }
+
+    #myProgress {
+        background-color: #ddd;
+    }
+
+    #myBar {
+        width: 0%;
+        height: 100%;
+        background-color: #04AA6D;
+    }
+
+    #features_iframe {
+        width: 100%;
+        height: 100%;
+        border: 0pt;
+        background-color: white;
+    }
+
+    .myButton {
+        background-color: #666;
+        border-radius: 3px;
+        border: 1px solid #ffffff;
+        display: inline-block;
+        cursor: pointer;
+        color: #ffffff;
+        font-family: Roboto;
+        font-size: 15px;
+        padding: 5px 13px;
+        text-decoration: none;
+    }
+
+        .myButton:hover {
+            background-color: #999;
+        }
+
+        .myButton:active {
+            position: relative;
+            top: 1px;
+        }
+
+    #uptodate {
+        padding: 10pt;
+    }
+
+    #success {
+        padding: 10pt;
+    }
+
+    #error {
+        padding: 10pt;
+        color: red;
+    }
+    .installpath {
+        padding: 10pt;
+    }
+</style>
+<body>
+    <div class="whole">
+        <div class="header"><h2 id="main"></h2></div>
+        <div class="content">
+            <div id="versions"></div>
+            <div class="rightside">
+                <div class="righttop">
+                    <div id="uptodate">
+                        <div id="uptodatetext"></div>
+                    </div>
+                    <div id="error">
+                    </div>
+                    <div id="success">
+                    </div>
+                    <div id="setup">
+                        <button class="myButton" id="SetupButton" onclick="startSync()"></button>
+                        <button class="myButton" id="RunButton" onclick="sendObject({request: 'run'})"></button>
+                        <br>Be careful! If the program is run, the executable is locked, need to exit before the version switching!
+                        <div><br></div>
+                        <div id="releasedate"></div>
+                    </div>
+                    <div id="progress">
+                        <h4 id="ptitle"></h4>
+                        <div class="progressLine">
+                            <div id="myProgress">
+                                <div id="myBar"></div>
+                            </div>
+                            <div>
+                                &nbsp<button class="myButton" id="Cancel" onclick="sendObject({ request: 'stop' }); hide('progress'); show('setup')">Cancel</button>
+                                &nbsp<button class="myButton" id="Close" onclick="window.close()">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="installpath"><br/><b>Install path:</b> INSTALLPATH</div>
+                </div>
+                <div id="features">
+                    <div id="header2"><h4>Features list:</h4></div>
+                    <div class="inner">
+                        <iframe id="features_iframe" src="https://pilgway.com/files/3dcoat/2021/updates_pure.html">
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        let destVersion = '';
+        let versions = ['VERSIONS'];
+        let currentVer = 'CURRENTVERSION';
+        let product = 'PRODUCT';       
+        let allDone = true;
+        let processStarted = false;
+
+        function startSync() {
+            show('progress');
+            hide('setup');
+            hide('success');
+            sendObject({ request: 'setimage', Version: destVersion });
+            processStarted = true;
+            allDone = false;
+            setProgress(0, 'Preparing...');
+        }
+
+        let render = (relEl, tpl) => {
+            if (!relEl) return;
+            const range = document.createRange();
+            range.selectNode(relEl);
+            const child = range.createContextualFragment(tpl);
+            return relEl.appendChild(child);
+        }
+        function insert(html) {
+            render(document.getElementById('versions'), html);
+        }
+
+        function show(x, y = null) {
+            console.log("show", x);
+            const el = document.getElementById(x);
+            if (el) {
+                el.style.display = 'block';
+                if (y) el.innerHTML = y;
+            }
+        }
+        function hide(x) {
+            console.log("hide", x);
+            const el = document.getElementById(x);
+            if (el) el.style.display = 'none';
+        }
+        function triggerTo(ver, inlist = false) {
+            hide('success');
+            if (!processStarted) {
+                let first = true;
+                hide('error');
+                hide('success');
+                for (v of versions) {
+                    if (v.Product == product) {
+                        if (v.Version === ver) {
+                            if (first && v.Version == currentVer) {
+                                show('uptodate');
+                                const ud = document.getElementById('uptodatetext');
+                                if (ud) ud.innerHTML = `The <b>${product}</b> is up-to-date.`;
+                            } else {
+                                hide('uptodate');
+                            }
+                            const rd = document.getElementById('releasedate');
+                            if (rd) rd.innerHTML = `Release date: <b>${v.ReleaseDate}</b>, Status: <b>${v.Status}</b>`;
+                            const inst = document.getElementById('SetupButton');
+                            if (inst) inst.innerHTML = `Install the <b>${product} ${v.Version}</b>`;
+                            const rinst = document.getElementById('RunButton');
+                            if (rinst) rinst.innerHTML = `Run the <b>${product}</b>`;
+                            show('setup');
+                            hide('progress');
+                            destVersion = ver;
+                        }
+                        first = false;
+                    }
+                }
+            }
+            if (destVersion.length && !inlist) listVersions();
+        }
+        hide('error');
+        hide('Close');
+        hide('progress');
+        hide('uptodate');
+        hide('success');
+        const main = document.getElementById('main');
+        if (main) main.innerHTML = `The <b>${product}</b> versions manager.`;
+        function listVersions() {
+            document.getElementById('versions').innerHTML = '';
+            let triggerDone = false;
+            let needStable = false;
+            for (let v of versions) {
+                if (v.Product == product && v.Version === currentVer) {
+                    if (v.Status === 'Stable') needStable = true;
+                    break;
+                }
+            }
+            for (let v of versions) {
+                if (v.Product == product) {
+                    if (versions.length && destVersion.length == 0 && !triggerDone && (v.Status === 'Stable' || !needStable)) {
+                        triggerTo(v.Version, true);
+                        triggerDone = true;
+                    }
+                    insert(`<div class="${currentVer === v.Version ? 'vitemCur' : 'vitem'}" onclick="triggerTo('${v.Version}')" ${v.Status === 'Stable' ? 'style="color: green"' : ''}>${(destVersion == v.Version ? '→ ' : '') + v.Version}</div>`);
+                }
+            }
+        }
+        listVersions();
+        function setProgress(value, title) {
+            var elem = document.getElementById("myBar");
+            if (elem) elem.style.width = value + "%";
+            elem = document.getElementById("ptitle");
+            if (elem) elem.innerText = title;
+        }
+        setInterval(() => {
+            if (!allDone) {
+                sendObject({ request: "progress" }).then(res => {
+                    if (res.progress && res.title) {
+                        setProgress(res.progress, res.title);
+                        if (res.progress < 100 && res.progress > 0 && allDone === false) {
+                            processStarted = true;
+                            show('progress');
+                            hide('setup');
+                            hide('success');
+                            hide('error');
+                        }
+                    } else console.log(res);
+                    if (res.finish) {
+                        console.log("finish");
+                        show('Close');
+                        hide('Cancel');
+                        allDone = true;
+                        processStarted = false;
+                        setProgress(0, "");
+                    }
+                    if (res.syncedTo) {
+                        console.log("syncedTo");
+                        hide('Close');
+                        hide('progress');
+                        hide('uptodate');
+                        currentVer = res.syncedTo;
+                        destVersion = '';
+                        allDone = true;
+                        processStarted = false;
+                        listVersions();
+                        setProgress(0, "");
+                        hide('uptodate');
+                        hide('error');
+                        show('success', `Succesfully updated to <b>${product} ${currentVer}</b>.`);
+                    }
+                    if (res.error) {
+                        console.log("error");
+                        hide('Close');
+                        hide('progress');
+                        hide('uptodate');
+                        hide('success');
+                        show('error', res.error);
+                        show('setup');
+                        processStarted = false;
+                        allDone = true;
+                        setProgress(0, "");
+                    }
+                });
+            }
+        }, 300);
+    </script>
+</body>
+</html>
